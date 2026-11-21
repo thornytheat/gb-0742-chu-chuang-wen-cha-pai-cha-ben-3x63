@@ -5,10 +5,11 @@ from app.modules.audit.reconcile import reconcile
 from app.modules.episodes.segment import segment
 from app.modules.gradient.grade import grade
 from app.modules.intake.readings import deduplicate, read
+from app.modules.lineage.attribution import attribute, swaps
 from app.modules.pairing.schedule import schedule
 
 
-def evaluate(package):
+def evaluate(package, prior=None):
     spec = package.spec
     rows, intake = read(package)
     deduplicate(rows)
@@ -17,7 +18,11 @@ def evaluate(package):
     pairs, unused = schedule(spec, rows, index)
     grades = grade(spec, pairs, rows)
     episodes = segment(grades, spec.sustained_hours)
+    swap_events = swaps(spec)
+    lineage, segments = attribute(spec, rows, episodes, swap_events, prior)
     audit = reconcile(spec, rows, intake, grades, episodes)
     return {"intake": intake, "rows": rows, "deployments": index.windows, "deployment_conflicts": index.conflicts,
-            "pairs": pairs, "unused": unused, "grades": grades, "episodes": episodes, "audit": audit,
+            "pairs": pairs, "unused": unused, "grades": grades, "episodes": episodes,
+            "swap_events": swap_events, "lineage_segments": segments, "lineage": lineage,
+            "audit": audit,
             "isolation": dict(sorted(Counter(row["code"] for row in rows if row["disposition"] == "isolated").items()))}

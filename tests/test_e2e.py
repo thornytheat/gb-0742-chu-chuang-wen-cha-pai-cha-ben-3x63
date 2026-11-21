@@ -36,7 +36,7 @@ def test_first_start_is_seeded_and_restart_uses_saved_archive(tmp_path):
     path = tmp_path / "persistent.sqlite3"
     with TestClient(create_app(path)) as first:
         records = first.get("/api/runs").json()
-        assert len(records) == 1 and records[0]["shift"] == "N26-1120"
+        assert [item["shift"] for item in records] == ["N26-1120", "N26-1119"]
     with TestClient(create_app(path)) as second:
         assert second.get("/api/runs").json() == records
 

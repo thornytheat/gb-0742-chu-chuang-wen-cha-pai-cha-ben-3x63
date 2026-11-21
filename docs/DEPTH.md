@@ -13,6 +13,7 @@
 | M5 异常持续 | 定位连续与瞬时异常段及其原行 | `GET /api/runs/{run_id}/episodes/{cabinet}` | `app/modules/episodes/segment.py` | `tests/test_episodes.py` |
 | M6 值班单勾稽 | 核对柜时与图档行，查报警误报漏报 | `GET /api/runs/{run_id}/audit` | `app/modules/audit/reconcile.py` | `tests/test_audit.py` |
 | M7 证据归卷 | 运行、复算或下载带摘要的归卷 | `POST /api/runs` `POST /api/runs/{run_id}/rerun` `GET /api/runs/{run_id}/export` | `app/modules/archive/pipeline.py` `app/modules/archive/service.py` `app/modules/archive/proof.py` `app/store.py` | `tests/test_archive.py` |
+| M8 跨换装归因 | 查换装点、每段主处置方向、旧账链接与归因账 | `GET /api/runs/{run_id}/lineage` `GET /api/runs/{run_id}/lineage/ledger` | `app/modules/lineage/attribution.py` `app/modules/lineage/handler.py` | `tests/test_lineage.py` `tests/test_lineage_api.py` |
 
 ## 陷阱登记
 
@@ -34,6 +35,11 @@
 | TRAP-17 | `night-points.csv` 第二段改中文并换序 | 收报和测量栏对调 | 每段独立映射字段 | `app/modules/intake/readings.py` | `tests/test_intake.py::test_header_switch_changes_field_positions` |
 | TRAP-23 | 探头在 13:00 馆内时间换柜 | 同一时刻两柜采信 | 左闭右开选择新柜 | `app/modules/assignment/windows.py` | `tests/test_assignment.py::test_adjacent_windows_are_half_open_at_exact_move` |
 | TRAP-25 | 在混合部署契约上叠加同柜同层窗 | 任选一个探头 | 标重叠并拒用重叠段 | `app/modules/assignment/windows.py` | `tests/test_assignment.py::test_second_probe_at_same_position_marks_overlap_only` |
+| TRAP-26 | 两柜夜间互换上层探头，异常页只剩段号 | 把迁来探头的异常当新故障，或把同柜异常全算柜位 | 识别成对换装点，每段只给一条主处置方向，跟探头接旧班次旧账 | `app/modules/lineage/attribution.py` | `tests/test_lineage.py::test_post_swap_episode_follows_moved_probe_to_prior_ledger` |
+| TRAP-27 | 同一段跨过换装时刻 | 换装前后混为一个方向 | 按换装时刻切开，保留父段号与片段序，原段可恢复 | `app/modules/lineage/attribution.py` | `tests/test_lineage.py::test_split_at_swap_keeps_parent_and_parts_recoverable` |
+| TRAP-28 | 换装证据缺新窗或不成对 | 强行接线产生错误归因 | 不立换装点，`UNLINKED` 保留旧版结论 | `app/modules/lineage/attribution.py` | `tests/test_lineage.py::test_incomplete_swap_evidence_preserves_old_conclusion_unlinked` |
+| TRAP-29 | 重跑归因覆盖旧探头原行与旧结论 | 旧账丢失无法恢复 | 归因只存引用，追加式 `lineage_ledger` 冲突不覆盖，对账校验同一条结论 | `app/store.py` `app/modules/audit/reconcile.py` | `tests/test_lineage_api.py::test_ledger_is_append_only_and_old_rows_are_recoverable` |
+| TRAP-30 | 依据旧班次尚未归卷 | 写出无据可依的半成品归因 | 整笔拒绝 `PRIOR_SHIFT_MISSING`，历史归卷不变 | `app/modules/archive/service.py` | `tests/test_lineage_api.py::test_missing_prior_shift_rejects_run_and_keeps_old_versions` |
 
 真实反例还有迁移前一分钟的下层读数不能与迁移后的上层配对，近中点无证读数不能挤掉同小时有效候选，区间端点的展示舍入不能改变判级，缺证切断连续异常，工单不能重复清销同一段。
 
@@ -42,3 +48,4 @@
 - 应监测柜时按键集合核对，柜时数分到稳定、异常、缺证。
 - 工单与持续异常按柜时定位，列出重复报警和未报持续段。
 - 原始 CSV、契约、规则版次确定归卷键。复算和证据导出会验证结果 SHA-256。
+- 跨换装归因以追加式归因账为准：页面结论与账内逐条比对，报缺记、改写差异、多账和保留旧版段；账内冲突不覆盖，旧探头原行与旧版归因始终可恢复。

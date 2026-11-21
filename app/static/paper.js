@@ -8,6 +8,11 @@ export const words = {
   LOWER_CONTENTION:'下层读数占用', CI_OVERLAP:'区间跨阈值', MISSING_RH:'湿度缺证',
   UNUSED_LOWER:'未用下层', EXTRA_UPPER:'额外上层', LATE_RECEIPT:'迟报', temperature:'温度', humidity:'湿度',
   upper:'上层', lower:'下层', accepted:'采信', isolated:'隔离', header:'栏头', duplicate:'重复', blank:'空行',
+  PROBE:'跟探头', CABINET:'跟柜位', NEW:'新故障', UNLINKED:'证据未成立',
+  LINKED:'已接线', PRESERVED:'保留旧版',
+  CABINET_ORIGIN:'本柜首段异常', CABINET_CONTINUITY:'同柜旧账接续', PROBE_HISTORY:'同探头旧班次旧账',
+  CABINET_HISTORY:'同柜旧班次旧账', NO_PRIOR_LEDGER:'无旧班次账可接', NO_MATCHING_HISTORY:'柜位探头均无旧账',
+  SWAP_EVIDENCE_INCOMPLETE:'换装证据不足，保留旧版',
 };
 const timeZone = 'Asia/Shanghai';
 const clock = new Intl.DateTimeFormat('zh-CN', {timeZone, hour:'2-digit',minute:'2-digit',hourCycle:'h23'});

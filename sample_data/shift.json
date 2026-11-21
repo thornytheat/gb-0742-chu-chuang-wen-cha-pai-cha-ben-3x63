@@ -106,6 +106,7 @@
       "at": "2026-11-20T10:00:00Z"
     }
   ],
+  "prior_shift": "N26-1119",
   "csv": "night-points.csv",
   "records": 52
 }

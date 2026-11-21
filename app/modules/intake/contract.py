@@ -64,6 +64,7 @@ class Shift(Window):
     sustained_hours: int = Field(ge=2, le=12)
     deployments: list[Deployment] = Field(min_length=1, max_length=64)
     tickets: list[Ticket] = Field(max_length=100)
+    prior_shift: IDENT | None = None
 
     @model_validator(mode="after")
     def check_shift(self):

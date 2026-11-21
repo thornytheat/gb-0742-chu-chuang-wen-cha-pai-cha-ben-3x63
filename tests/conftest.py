@@ -24,6 +24,8 @@ def client(tmp_path):
 
 @pytest.fixture
 def base(client):
-    response = client.post("/api/runs", json={"sample":"shift"})
+    prior = client.post("/api/runs", json={"sample": "prior"})
+    assert prior.status_code == 201, prior.text
+    response = client.post("/api/runs", json={"sample": "shift"})
     assert response.status_code == 201, response.text
     return f'/api/runs/{response.json()["manifest"]["id"]}'

@@ -1,0 +1,68 @@
+{
+  "sample": "prior",
+  "label": "换装前旧班次样例",
+  "shift": "N26-1119",
+  "start": "2026-11-19T20:00:00+08:00",
+  "end": "2026-11-20T04:00:00+08:00",
+  "cabinet_hours": [
+    {
+      "id": "CV-17",
+      "label": "北廊 · 青瓷橱窗",
+      "upper_mm": 1550,
+      "lower_mm": 550,
+      "temp_limit": "2.0",
+      "rh_limit": "8.0"
+    },
+    {
+      "id": "CV-21",
+      "label": "北廊 · 漆器橱窗",
+      "upper_mm": 1650,
+      "lower_mm": 450,
+      "temp_limit": "2.0",
+      "rh_limit": "8.0"
+    }
+  ],
+  "tolerance_seconds": 240,
+  "late_seconds": 900,
+  "sustained_hours": 2,
+  "deployments": [
+    {
+      "probe": "0001",
+      "cabinet": "CV-17",
+      "level": "upper",
+      "start": "2026-11-19T20:00:00+08:00",
+      "end": "2026-11-20T04:00:00+08:00"
+    },
+    {
+      "probe": "0008",
+      "cabinet": "CV-21",
+      "level": "upper",
+      "start": "2026-11-19T20:00:00+08:00",
+      "end": "2026-11-20T04:00:00+08:00"
+    },
+    {
+      "probe": "0012",
+      "cabinet": "CV-17",
+      "level": "lower",
+      "start": "2026-11-19T20:00:00+08:00",
+      "end": "2026-11-20T04:00:00+08:00"
+    },
+    {
+      "probe": "0014",
+      "cabinet": "CV-21",
+      "level": "lower",
+      "start": "2026-11-19T20:00:00+08:00",
+      "end": "2026-11-20T04:00:00+08:00"
+    }
+  ],
+  "tickets": [
+    {
+      "id": "AL-0611",
+      "cabinet": "CV-21",
+      "at": "2026-11-19T19:10:00Z"
+    }
+  ],
+  "prior_shift": null,
+  "csv": "prior-points.csv",
+  "records": 32
+}

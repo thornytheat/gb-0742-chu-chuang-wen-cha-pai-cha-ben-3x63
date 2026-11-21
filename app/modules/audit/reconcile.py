@@ -40,7 +40,20 @@ def reconcile_tickets(spec, grades, episodes):
     return reviews, [item["id"] for item in episodes if item["kind"] == "SUSTAINED" and item["id"] not in used]
 
 
-def reconcile(spec, rows, intake, grades, episodes):
+def reconcile_lineage(lineage, ledger):
+    """归卷对账：页面归因与追加式归因账必须是同一条结论，缺记或改写都报差异。"""
+    by_segment = {item["segment"]: item for item in ledger}
+    missing = [item["segment"] for item in lineage if item["segment"] not in by_segment]
+    drifted = [item["segment"] for item in lineage
+               if item["segment"] in by_segment and by_segment[item["segment"]] != item]
+    extra = [segment for segment in by_segment if segment not in {item["segment"] for item in lineage}]
+    directions = Counter(item["direction"] for item in lineage)
+    return {"balanced": not (missing or drifted or extra), "missing": missing, "drifted": drifted,
+            "extra": extra, "direction_counts": dict(directions),
+            "preserved": [item["segment"] for item in lineage if item.get("status") == "PRESERVED"]}
+
+
+def reconcile(spec, rows, intake, grades, episodes, lineage=None, ledger=None):
     begin, end = seconds(spec.start), seconds(spec.end)
     expected = {(cabinet.id, hour) for cabinet in spec.cabinet_hours for hour in range(begin, end, 3600)}
     seen = Counter((slot["cabinet"], slot["hour"]) for slot in grades)
@@ -56,5 +69,7 @@ def reconcile(spec, rows, intake, grades, episodes):
     row_audit["balanced"] = len(rows) == sum(row_audit[key] for key in DISPOSITIONS) and (
         intake["declared"] == counted["accepted"] + counted["duplicate"] + counted["isolated"])
     tickets, unreported = reconcile_tickets(spec, grades, episodes)
+    lineage_audit = reconcile_lineage(lineage or [], ledger or [])
     return {"hours": hours, "row_audit": row_audit, "tickets": tickets, "unreported": unreported,
+            "lineage": lineage_audit,
             "ticket_counts": dict(Counter(ticket["code"] for ticket in tickets))}

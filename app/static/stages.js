@@ -165,16 +165,26 @@ async function episodes({get, base, cabinet, run, signal}) {
   const data = await get(`${base}/episodes/${cabinet}`);
   const target = q('#episode-detail');
   const load = drill(target,signal);
+  const direction = (item) => state(item.attribution?.direction ?? 'UNLINKED');
   const show = (id) => load(() => get(`${base}/episodes/${cabinet}/${id}`),(item) => {
     const links = el('div',null,'jump-list');
     for (const entry of item.evidence) {
       links.append(jump(`${hour(entry.start)} · 原行 ${rowLabel(entry.upper)}/${rowLabel(entry.lower)}`, '/', {run:run.id,cabinet,at:entry.start}));
     }
-    target.replaceChildren(entries([['异常段',item.id],['时长',`${item.hours} h`],['指标',item.axes.map((axis) => words[axis]).join('、')]]),links);
+    const attribution = item.attribution ?? {};
+    const linkRows = (attribution.links ?? []).map((link) => el('p',
+      `${link.run ? `旧班次 ${link.run.slice(0,8)} · ` : ''}${link.ref}（${link.cabinet}）${link.probe ? ` · 探头 ${link.probe}` : ''}`));
+    target.replaceChildren(
+      entries([['异常段',item.id],['时长',`${item.hours} h`],['指标',item.axes.map((axis) => words[axis]).join('、')]]),
+      entries([['主处置方向',direction(item)],['归因依据',words[attribution.basis] ?? attribution.basis ?? '—'],
+               ['换装时刻',attribution.swap_at ? stamp(attribution.swap_at) : '换装前'],
+               ['上层探头',(attribution.upper_probes ?? []).join('、')],['结论状态',words[attribution.status] ?? attribution.status ?? '—']]),
+      ...linkRows, links);
   });
   q('#episode-summary').replaceChildren(entries([['总段数',data.length],['持续',data.filter((item) => item.kind === 'SUSTAINED').length],
     ['瞬时',data.filter((item) => item.kind === 'TRANSIENT').length],['持续门槛',`${run.sustained_hours} h`]]));
   table(q('#episodes'), data,[['段号',(row) => pick(row.id,() => show(row.id)),'mono'],['判级',(row) => state(row.kind)],
+    ['主处置方向',(row) => direction(row),'mono'],
     ['起',(row) => stamp(row.start),'mono'],['止',(row) => stamp(row.end),'mono'],['时长 h','hours','num']]);
   if (data.length) q('#episodes button').click();
   else target.replaceChildren(el('p','此柜工作时段无异常。','empty'));
@@ -193,6 +203,16 @@ function audit({audit,run}) {
   q('#unreported').replaceChildren(entries([['缺工单',present],['已核销',audit.ticket_counts.MATCHED ?? 0],
     ['工单差项',audit.tickets.length - (audit.ticket_counts.MATCHED ?? 0)],['柜时缺键',hours.missing_keys.length],
     ['柜时多键',hours.extra_keys.length],['柜时重键',hours.duplicate_keys.length]]));
+  const lineage = audit.lineage ?? {balanced:true, missing:[], drifted:[], extra:[], direction_counts:{}, preserved:[]};
+  const counts = lineage.direction_counts ?? {};
+  q('#lineage-audit').replaceChildren(entries([
+    ['对账结论', lineage.balanced ? '页面与归因账一致' : '存在差异，保留旧版'],
+    ['跟探头', counts.PROBE ?? 0], ['跟柜位', counts.CABINET ?? 0],
+    ['新故障', counts.NEW ?? 0], ['证据未成立', counts.UNLINKED ?? 0],
+    ['缺记', lineage.missing.length ? lineage.missing.join('、') : '无'],
+    ['改写差异', lineage.drifted.length ? lineage.drifted.join('、') : '无'],
+    ['保留旧版段', lineage.preserved.length ? lineage.preserved.join('、') : '无'],
+  ]));
 }
 
 function archive({history,run}) {
